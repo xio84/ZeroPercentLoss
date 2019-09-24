@@ -10,7 +10,9 @@ TIMEOUT = 20 # In Seconds
 UDP_IP = "127.0.0.1"
 UDP_PORT = 5005
 
-AVAILABLE_FILES = ['pre-rebase.sample', 'traffic_image.jpg']
+path = 'file_example/'
+
+AVAILABLE_FILES = []
 AVAILABLE_PORTS = range(5007, 5500, 2)
 
 
@@ -28,8 +30,9 @@ def send_data(port, q, file_request, data_id):
         
         # Initiate file sending
         i = 0
-        while (i<=packets_to_send):
-            # print(i)
+        j = 0
+        while ((i+(j*256))<=packets_to_send):
+            print(packets_to_send - (i + j*256))
             packet_data = bytearray(f.read(SIZE_LIMIT))
             p = Packet(parsed_data=packet_data, data_id=data_id, sequence_number=i)
             sock2.sendto(p.parse(), (UDP_IP, port+1))
@@ -39,6 +42,7 @@ def send_data(port, q, file_request, data_id):
                 i += 1
                 if (i==256):
                     i=0
+                    j+=1
             if (res.data_type>1):
                 break
         
@@ -78,10 +82,18 @@ def receiver(data, addr, q, sock):
     return 0
 
 if __name__ == '__main__':
+    #Initiate available files
+    # r=root, d=directories, f = files
+    for r, d, f in os.walk(path):
+        for file in f:
+            AVAILABLE_FILES.append(file)
+
+
+    #Initiate socket
     sock = socket.socket(socket.AF_INET, # Internet
                         socket.SOCK_DGRAM) # UDP
     sock.bind((UDP_IP, UDP_PORT))
-    sock.settimeout(TIMEOUT)
+    # sock.settimeout(TIMEOUT)
     pool = mp.Pool(processes=10)
     m = mp.Manager()
     q = m.Queue()

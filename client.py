@@ -1,10 +1,15 @@
 import multiprocessing as mp
 import socket
 from packet import Packet
+import os
+
+path = 'file_example/'
+
 
 UDP_IP = "127.0.0.1"
 UDP_SEND_PORT = 5005
 UDP_RCV_PORT = UDP_SEND_PORT+1
+AVAILABLE_FILES = []
 # MESSAGE = bytes(bytearray(b"Hello, World!"))
 
 def file_writer(p, query):
@@ -23,6 +28,7 @@ def file_writer(p, query):
     p = Packet(parsed_bytes=bytearray(data))
     while(p.data_type < 2):
         if (p.sum_checker and p.sequence_number==i):
+            print(i)
             f.write(bytes(p.data))
             res = Packet(1,p.data_id)
             sock2.sendto(res.parse(), (UDP_IP, port))
@@ -35,6 +41,12 @@ def file_writer(p, query):
     f.close()
 
 if __name__=='__main__':
+    #Initiate available files
+    # r=root, d=directories, f = files
+    for r, d, f in os.walk(path):
+        for file in f:
+            AVAILABLE_FILES.append(file)
+
     print ("UDP target IP:", UDP_IP)
     print ("UDP target port:", UDP_SEND_PORT)
 
@@ -45,7 +57,10 @@ if __name__=='__main__':
     pool = mp.Pool(processes=10)
 
     while True:
-        query=input('Available files:\n 1. pre-rebase.sample\n')
+        print('Available files:\n')
+        for file in AVAILABLE_FILES:
+            print(file)
+        query=input()
         p = Packet(parsed_data=bytearray(query.encode()))
         sock.sendto(p.parse(), (UDP_IP, UDP_SEND_PORT))
         try:

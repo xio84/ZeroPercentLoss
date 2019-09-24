@@ -10,7 +10,7 @@ TIMEOUT = 20 # In Seconds
 UDP_IP = "127.0.0.1"
 UDP_PORT = 5005
 
-AVAILABLE_FILES = ['pre-rebase.sample']
+AVAILABLE_FILES = ['pre-rebase.sample', 'traffic_image.jpg']
 AVAILABLE_PORTS = range(5007, 5500, 2)
 
 
@@ -29,6 +29,7 @@ def send_data(port, q, file_request, data_id):
         # Initiate file sending
         i = 0
         while (i<=packets_to_send):
+            # print(i)
             packet_data = bytearray(f.read(SIZE_LIMIT))
             p = Packet(parsed_data=packet_data, data_id=data_id, sequence_number=i)
             sock2.sendto(p.parse(), (UDP_IP, port+1))
@@ -36,6 +37,8 @@ def send_data(port, q, file_request, data_id):
             res = Packet(parsed_bytes=bytearray(data)) # Read packet
             if (res.data_type==1):
                 i += 1
+                if (i==256):
+                    i=0
             if (res.data_type>1):
                 break
         

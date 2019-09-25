@@ -73,7 +73,6 @@ if __name__ == '__main__':
     sock = socket.socket(socket.AF_INET, # Internet
                         socket.SOCK_DGRAM) # UDP
     sock.bind((UDP_IP, UDP_PORT))
-    sock.settimeout(10)
     # sock.settimeout(TIMEOUT)
     pool = mp.Pool(processes=10)
     m = mp.Manager()

@@ -7,7 +7,7 @@ from packet import Packet
 
 SIZE_LIMIT = 32000 # In bytes
 TIMEOUT = 20 # In Seconds
-UDP_IP = "127.0.0.1"
+UDP_IP = "192.168.43.150"
 UDP_PORT = 5005
 
 path = 'downloads/'
@@ -47,7 +47,9 @@ def send_data(port, q, file_request, data_id):
 
 def receiver(data, addr, q, sock):
     p = Packet(parsed_bytes=bytearray(data))
-    file_request = bytes(p.data).decode()
+    first_request = bytes(p.data).decode().split(':')
+    file_request = first_request[0]
+    primary_send_port = int(first_request[1])
     print("received file request:", file_request)
     # print(p.parse())
     if (p.sum_checker()):
@@ -56,14 +58,15 @@ def receiver(data, addr, q, sock):
         file_request = path + file_request
         data_id = p.data_id
         p = Packet(parsed_data=bytearray(str(port).encode()), data_id=data_id)
-        sock.sendto(p.parse(), (UDP_IP, UDP_PORT+1))
+        print(primary_send_port)
+        sock.sendto(p.parse(), (UDP_IP, primary_send_port))
         send_data(port, q, file_request, data_id)
     else:
         if(not p.sum_checker()):
             print('Checksum Failed')
         print("Message fail")
         p = Packet(3,0)
-        sock.sendto(p.parse(), (UDP_IP, UDP_PORT+1))
+        sock.sendto(p.parse(), (UDP_IP, primary_send_port))
 
     return 0
 

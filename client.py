@@ -6,9 +6,8 @@ import os
 path = 'file_example/'
 
 SIZE_LIMIT = 32000
-UDP_IP = "127.0.0.1"
+UDP_IP = "192.168.43.150"
 UDP_SEND_PORT = 5005
-UDP_RCV_PORT = UDP_SEND_PORT+1
 AVAILABLE_FILES = []
 #Initiate available files
 # r=root, d=directories, f = files
@@ -74,7 +73,17 @@ if __name__=='__main__':
 
     sock = socket.socket(socket.AF_INET, # Internet
                         socket.SOCK_DGRAM) # UDP
-    sock.bind((UDP_IP, UDP_RCV_PORT))
+
+    #port setup
+    port_accepted = False
+    while(not port_accepted):
+        UDP_RCV_PORT = int(input('Select port (4500-5000):\n'))
+        try:
+            sock.bind((UDP_IP, UDP_RCV_PORT))
+            port_accepted = True
+        except(Exception):
+            print('Port not available!')
+            port_accepted = False
     sock.settimeout(5)
     pool = mp.Pool(processes=10)
 
@@ -85,7 +94,8 @@ if __name__=='__main__':
         query=input()
         if(AVAILABLE_FILES.count(query) > 0):
             data_id = AVAILABLE_FILES.index(query)
-            p = Packet(parsed_data=bytearray(query.encode()), data_id=data_id)
+            port_information = query + ':' + str(UDP_RCV_PORT)
+            p = Packet(parsed_data=bytearray(port_information.encode()), data_id=data_id)
             print(p.parse())
             sock.sendto(p.parse(), (UDP_IP, UDP_SEND_PORT))
             try:

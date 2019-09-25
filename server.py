@@ -12,7 +12,12 @@ UDP_PORT = 5005
 
 path = 'file_example/'
 
+#Initiate available files
+# r=root, d=directories, f = files
 AVAILABLE_FILES = []
+for r, d, f in os.walk(path):
+        for file in f:
+            AVAILABLE_FILES.append(file)
 AVAILABLE_PORTS = range(5007, 5500, 2)
 
 
@@ -27,17 +32,20 @@ def send_data(port, q, file_request, data_id):
         f = open(file_request,'rb')
         bytes_to_send = os.path.getsize(file_request)
         packets_to_send = bytes_to_send // SIZE_LIMIT
+        ten_percent = packets_to_send // 10
         
         # Initiate file sending
         i = 0
         j = 0
         while ((i+(j*256))<=packets_to_send):
-            print(packets_to_send - (i + j*256))
+            # print(packets_to_send - (i + j*256))
             packet_data = bytearray(f.read(SIZE_LIMIT))
             p = Packet(parsed_data=packet_data, data_id=data_id, sequence_number=i)
             sock2.sendto(p.parse(), (UDP_IP, port+1))
             data, addr = sock2.recvfrom(1024)
             res = Packet(parsed_bytes=bytearray(data)) # Read packet
+            if ((i+(j*256))%ten_percent == 0):
+                print((i+(j*256)) // ten_percent * 10, '% done sending ', file_request)
             if (res.data_type==1):
                 i += 1
                 if (i==256):
@@ -66,6 +74,7 @@ def receiver(data, addr, q, sock):
     p = Packet(parsed_bytes=bytearray(data))
     file_request = bytes(p.data).decode()
     print("received file request:", file_request)
+    # print(p.parse())
     if (p.sum_checker() and AVAILABLE_FILES.count(file_request)>0):
         port = q.get()
         print("Beginning transfer, starting on port: ", port)
@@ -75,6 +84,10 @@ def receiver(data, addr, q, sock):
         sock.sendto(p.parse(), (UDP_IP, UDP_PORT+1))
         send_data(port, q, file_request, data_id)
     else:
+        if(not p.sum_checker()):
+            print('Checksum Failed')
+        if(AVAILABLE_FILES.count(file_request)==0):
+            print('No such files')
         print("Message fail")
         p = Packet(3,0)
         sock.sendto(p.parse(), (UDP_IP, UDP_PORT+1))
@@ -82,12 +95,9 @@ def receiver(data, addr, q, sock):
     return 0
 
 if __name__ == '__main__':
-    #Initiate available files
-    # r=root, d=directories, f = files
-    for r, d, f in os.walk(path):
-        for file in f:
-            AVAILABLE_FILES.append(file)
 
+    for file in AVAILABLE_FILES:
+        print(file)
 
     #Initiate socket
     sock = socket.socket(socket.AF_INET, # Internet

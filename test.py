@@ -1,5 +1,5 @@
 from packet import Packet
-import os
+import os, sys
 
 # # checksum prototype
 
@@ -92,4 +92,36 @@ import os
 #         input()
 #         print('\n')
 
-f = open('file_example/pre-base.sample','rb')
+# f = open('file_example/pre-base.sample','rb')
+
+from ctypes import windll, Structure, c_long, byref
+import time
+
+
+class POINT(Structure):
+    _fields_ = [("x", c_long), ("y", c_long)]
+
+
+
+def queryMousePosition(p):
+    pt = POINT()
+    windll.user32.GetCursorPos(byref(pt))
+    p = pt
+    return { "x": pt.x, "y": pt.y}
+
+p = POINT()
+pos = queryMousePosition(p)
+query = u"\u001b[2J"
+sys.stdout.write(u"\u001b[s")
+sys.stdout.write("\n" + str(pos))
+sys.stdout.write(u"\u001b[u")
+sys.stdout.flush()
+sys.stdout.write(u"\u001b[s")
+sys.stdout.write(str(pos))
+sys.stdout.write(u"\u001b[u")
+time.sleep(2)
+
+sys.stdout.flush()
+# sys.stdout.write(str(pos))
+# sys.stdout.flush()
+

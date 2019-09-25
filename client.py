@@ -5,7 +5,7 @@ import os
 
 path = 'file_example/'
 
-
+SIZE_LIMIT = 32000
 UDP_IP = "127.0.0.1"
 UDP_SEND_PORT = 5005
 UDP_RCV_PORT = UDP_SEND_PORT+1
@@ -17,8 +17,8 @@ for r, d, f in os.walk(path):
         AVAILABLE_FILES.append(file)
 # MESSAGE = bytes(bytearray(b"Hello, World!"))
 
-def file_writer(p, query):
-    i = 0
+def file_writer(p, query, data_id):
+    file_request = path + query
     port = int(bytes(p.data).decode())
     UDP_SEND_PORT = port
     UDP_RCV_PORT = port+1
@@ -26,24 +26,46 @@ def file_writer(p, query):
                         socket.SOCK_DGRAM) # UDP
     sock2.bind((UDP_IP, UDP_RCV_PORT))
     sock2.settimeout(5)
-    f = open('downloads/' + query,'wb')
-    res = Packet(1,p.data_id)
-    sock2.sendto(res.parse(), (UDP_IP, port))
-    data, addr = sock2.recvfrom(32678)
-    p = Packet(parsed_bytes=bytearray(data))
-    while(p.data_type < 2):
-        if (p.sum_checker() and p.sequence_number==i):
-            # print(i)
-            f.write(bytes(p.data))
-            res = Packet(1,p.data_id)
-            sock2.sendto(res.parse(), (UDP_IP, port))
-            data, addr = sock2.recvfrom(32678)
-            p = Packet(parsed_bytes=bytearray(data))
-            i+=1
-            if (i==256):
-                i=0
-    print('Download file : ',query,' has finished')
-    f.close()
+
+    # Sending file
+    try:
+        f = open(file_request,'rb')
+        bytes_to_send = os.path.getsize(file_request)
+        packets_to_send = bytes_to_send // SIZE_LIMIT
+        ten_percent = packets_to_send // 10
+        if (ten_percent == 0):
+            ten_percent = 1
+        
+        # Initiate file sending
+        i = 0
+        j = 0
+        while ((i+(j*256))<=packets_to_send):
+            # print(packets_to_send - (i + j*256))
+            packet_data = bytearray(f.read(SIZE_LIMIT))
+            p = Packet(parsed_data=packet_data, data_id=data_id, sequence_number=i)
+            sock2.sendto(p.parse(), (UDP_IP, port))
+            data, addr = sock2.recvfrom(1024)
+            res = Packet(parsed_bytes=bytearray(data)) # Read packet
+            if ((i+(j*256))%ten_percent == 0):
+                print((i+(j*256)) // ten_percent * 10, '% done sending ', file_request)
+            if (res.data_type==1):
+                i += 1
+                if (i==256):
+                    i=0
+                    j+=1
+            if (res.data_type>1):
+                break
+        
+        # Finishing file transfer
+        p = Packet(2,data_id,i)
+        sock2.sendto(p.parse(), (UDP_IP, port))
+        f.close()
+
+    except(FileNotFoundError):
+        data = bytearray(b'File not found!')
+        p = Packet(parsed_data=data, data_type=3, data_id=data_id)
+        MESSAGE = p.parse()
+        sock2.sendto(MESSAGE, (UDP_IP, port))
 
 if __name__=='__main__':
 
@@ -61,18 +83,23 @@ if __name__=='__main__':
         for file in AVAILABLE_FILES:
             print(file)
         query=input()
-        p = Packet(parsed_data=bytearray(query.encode()))
-        # print(p.parse())
-        sock.sendto(p.parse(), (UDP_IP, UDP_SEND_PORT))
-        try:
-            data, addr = sock.recvfrom(1024)
-            p = Packet(parsed_bytes=bytearray(data))
-            # print(p.parse())
-            if (p.data_type < 2):
-                # Setup port
-                # file_writer(p, query)
-                print('Starting Download:', query)
-                result = pool.apply_async(file_writer, (p, query))
-                # result.get()
-        except(TimeoutError):
-            print('No, response. Try again')
+        if(AVAILABLE_FILES.count(query) > 0):
+            data_id = AVAILABLE_FILES.index(query)
+            p = Packet(parsed_data=bytearray(query.encode()), data_id=data_id)
+            print(p.parse())
+            sock.sendto(p.parse(), (UDP_IP, UDP_SEND_PORT))
+            try:
+                data, addr = sock.recvfrom(1024)
+                p = Packet(parsed_bytes=bytearray(data))
+                # print(p.parse())
+                if (p.data_type < 2):
+                    # Setup port
+                    # file_writer(p, query)
+                    print('Starting Upload:', query)
+                    result = pool.apply_async(file_writer, (p, query, data_id))
+                    # result.get()
+                    # result.get()
+            except(TimeoutError):
+                print('No, response. Try again')
+        else:
+            print('No such files')

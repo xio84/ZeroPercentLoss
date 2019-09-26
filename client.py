@@ -8,7 +8,7 @@ path = 'file_example/'
 
 SIZE_LIMIT = 32000
 UDP_IP = "127.0.0.1"
-UDP_SEND_PORT = 4000
+UDP_SEND_PORT = 5005
 AVAILABLE_FILES = []
 #Initiate available files
 # r=root, d=directories, f = files

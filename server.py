@@ -14,12 +14,12 @@ path = 'downloads/'
 AVAILABLE_PORTS = range(5007, 5500, 2)
 
 
-def send_data(port, q, file_request, data_id):
+def send_data(UDP_SEND_IP, port, q, file_request, data_id):
     sock2 = socket.socket(socket.AF_INET, # Internet
                         socket.SOCK_DGRAM) # UDP
     sock2.bind((UDP_IP, port))
     sock2.settimeout(5)
-    print(file_request)
+    # print(file_request)
 
     i = 0    
     f = open(file_request,'wb')
@@ -33,7 +33,7 @@ def send_data(port, q, file_request, data_id):
             # print(p.parse())
             f.write(bytes(p.data))
             res = Packet(1,p.data_id)
-            sock2.sendto(res.parse(), (UDP_IP, port+1))
+            sock2.sendto(res.parse(), (UDP_SEND_IP, port+1))
             data, addr = sock2.recvfrom(32678)
             p = Packet(parsed_bytes=bytearray(data))
             i+=1
@@ -46,6 +46,7 @@ def send_data(port, q, file_request, data_id):
 
 
 def receiver(data, addr, q, sock):
+    UDP_SEND_IP = addr[0]
     p = Packet(parsed_bytes=bytearray(data))
     first_request = bytes(p.data).decode().split(':')
     file_request = first_request[0]
@@ -58,15 +59,15 @@ def receiver(data, addr, q, sock):
         file_request = path + file_request
         data_id = p.data_id
         p = Packet(parsed_data=bytearray(str(port).encode()), data_id=data_id)
-        print(primary_send_port)
-        sock.sendto(p.parse(), (UDP_IP, primary_send_port))
-        send_data(port, q, file_request, data_id)
+        # print(primary_send_port)
+        sock.sendto(p.parse(), (UDP_SEND_IP, primary_send_port))
+        send_data(UDP_SEND_IP, port, q, file_request, data_id)
     else:
         if(not p.sum_checker()):
             print('Checksum Failed')
         print("Message fail")
         p = Packet(3,0)
-        sock.sendto(p.parse(), (UDP_IP, primary_send_port))
+        sock.sendto(p.parse(), (UDP_SEND_IP, primary_send_port))
 
     return 0
 
@@ -93,7 +94,7 @@ if __name__ == '__main__':
         # receiver(data, addr)
         # receiver(data,addr,q,sock)
         results = pool.apply_async(receiver, (data, addr, q, sock))
-        # results.get()
+        results.get()
         # print(results.get(6))
     # results.close()
 

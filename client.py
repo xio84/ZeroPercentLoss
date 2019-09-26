@@ -16,7 +16,7 @@ for r, d, f in os.walk(path):
         AVAILABLE_FILES.append(file)
 # MESSAGE = bytes(bytearray(b"Hello, World!"))
 
-def file_writer(p, query, data_id):
+def file_writer(UDP_SEND_IP, p, query, data_id):
     file_request = path + query
     port = int(bytes(p.data).decode())
     UDP_SEND_PORT = port
@@ -42,7 +42,7 @@ def file_writer(p, query, data_id):
             # print(packets_to_send - (i + j*256))
             packet_data = bytearray(f.read(SIZE_LIMIT))
             p = Packet(parsed_data=packet_data, data_id=data_id, sequence_number=i)
-            sock2.sendto(p.parse(), (UDP_IP, port))
+            sock2.sendto(p.parse(), (UDP_SEND_IP, port))
             data, addr = sock2.recvfrom(1024)
             res = Packet(parsed_bytes=bytearray(data)) # Read packet
             if ((i+(j*256))%ten_percent == 0):
@@ -57,18 +57,20 @@ def file_writer(p, query, data_id):
         
         # Finishing file transfer
         p = Packet(2,data_id,i)
-        sock2.sendto(p.parse(), (UDP_IP, port))
+        sock2.sendto(p.parse(), (UDP_SEND_IP, port))
         f.close()
 
     except(FileNotFoundError):
         data = bytearray(b'File not found!')
         p = Packet(parsed_data=data, data_type=3, data_id=data_id)
         MESSAGE = p.parse()
-        sock2.sendto(MESSAGE, (UDP_IP, port))
+        sock2.sendto(MESSAGE, (UDP_SEND_IP, port))
 
 if __name__=='__main__':
 
-    print ("UDP target IP:", UDP_IP)
+    UDP_SEND_IP = input('input target ip:\n')
+
+    print ("UDP target IP:", UDP_SEND_IP)
     print ("UDP target port:", UDP_SEND_PORT)
 
     sock = socket.socket(socket.AF_INET, # Internet
@@ -96,8 +98,8 @@ if __name__=='__main__':
             data_id = AVAILABLE_FILES.index(query)
             port_information = query + ':' + str(UDP_RCV_PORT)
             p = Packet(parsed_data=bytearray(port_information.encode()), data_id=data_id)
-            print(p.parse())
-            sock.sendto(p.parse(), (UDP_IP, UDP_SEND_PORT))
+            # print(p.parse())
+            sock.sendto(p.parse(), (UDP_SEND_IP, UDP_SEND_PORT))
             try:
                 data, addr = sock.recvfrom(1024)
                 p = Packet(parsed_bytes=bytearray(data))
@@ -106,8 +108,8 @@ if __name__=='__main__':
                     # Setup port
                     # file_writer(p, query)
                     print('Starting Upload:', query)
-                    result = pool.apply_async(file_writer, (p, query, data_id))
-                    # result.get()
+                    result = pool.apply_async(file_writer, (UDP_SEND_IP, p, query, data_id))
+                    result.get()
                     # result.get()
             except(TimeoutError):
                 print('No, response. Try again')

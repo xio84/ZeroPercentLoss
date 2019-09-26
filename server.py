@@ -47,6 +47,7 @@ def send_data(UDP_SEND_IP, port, q, file_request, data_id):
                     j+=1
             except(Exception):
                 print('Not acknowledge, trying again...')
+                f.seek(i,-SIZE_LIMIT)
         else:
             print('seq_num mismatch',i,'and',p.sequence_number)
             res = Packet(1,p.data_id,sequence_number=i)

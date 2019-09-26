@@ -59,10 +59,14 @@ def file_writer(UDP_SEND_IP, p, query, data_id):
                 elif (res.sequence_number!=i):
                     print('Mismatched sequence number, readjusting...',i)
                     i = res.sequence_number
+                    f.seek(i,-SIZE_LIMIT)
+                else:
+                    f.seek(1,-SIZE_LIMIT)
                 if (res.data_type>1):
                     break
             except(Exception):
                 print('Not acknowledged, trying again...')
+                f.seek(1,-SIZE_LIMIT)
         
         # Finishing file transfer
         p = Packet(2,data_id,i)

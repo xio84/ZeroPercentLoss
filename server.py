@@ -18,7 +18,7 @@ def send_data(UDP_SEND_IP, port, q, file_request, data_id):
     sock2 = socket.socket(socket.AF_INET, # Internet
                         socket.SOCK_DGRAM) # UDP
     sock2.bind((UDP_IP, port))
-    sock2.settimeout(5)
+    sock2.settimeout(500)
     # print(file_request)
 
     i = 0    

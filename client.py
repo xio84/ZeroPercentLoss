@@ -2,6 +2,7 @@ import multiprocessing as mp
 import socket
 from packet import Packet
 import os
+import time
 
 path = 'file_example/'
 
@@ -24,7 +25,7 @@ def file_writer(UDP_SEND_IP, p, query, data_id):
     sock2 = socket.socket(socket.AF_INET, # Internet
                         socket.SOCK_DGRAM) # UDP
     sock2.bind((UDP_IP, UDP_RCV_PORT))
-    sock2.settimeout(5)
+    sock2.settimeout(2)
 
     # Sending file
     try:
@@ -43,21 +44,30 @@ def file_writer(UDP_SEND_IP, p, query, data_id):
             packet_data = bytearray(f.read(SIZE_LIMIT))
             p = Packet(parsed_data=packet_data, data_id=data_id, sequence_number=i)
             sock2.sendto(p.parse(), (UDP_SEND_IP, port))
-            data, addr = sock2.recvfrom(1024)
-            res = Packet(parsed_bytes=bytearray(data)) # Read packet
-            if ((i+(j*256))%ten_percent == 0):
-                print((i+(j*256)) // ten_percent * 10, '% done sending ', file_request)
-            if (res.data_type==1):
-                i += 1
-                if (i==256):
-                    i=0
-                    j+=1
-            if (res.data_type>1):
-                break
+            # print('sent file with seqnum:',p.sequence_number)
+            try:
+                data, addr = sock2.recvfrom(1024)
+                res = Packet(parsed_bytes=bytearray(data)) # Read packet
+                # print('received file with seqnum:',res.sequence_number)
+                if ((i+(j*256))%ten_percent == 0):
+                    print((i+(j*256)) // ten_percent * 10, '% done sending ', file_request)
+                if (res.data_type==1 and res.sequence_number==i):
+                    i += 1
+                    if (i==256):
+                        i=0
+                        j+=1
+                elif (res.sequence_number!=i):
+                    print('Mismatched sequence number, readjusting...',i)
+                    i = res.sequence_number
+                if (res.data_type>1):
+                    break
+            except(Exception):
+                print('Not acknowledged, trying again...')
         
         # Finishing file transfer
         p = Packet(2,data_id,i)
         sock2.sendto(p.parse(), (UDP_SEND_IP, port))
+        print('Finished sending: ', file_request)
         f.close()
 
     except(FileNotFoundError):

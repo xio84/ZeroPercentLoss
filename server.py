@@ -27,18 +27,41 @@ def send_data(UDP_SEND_IP, port, q, file_request, data_id):
     # sock2.sendto(res.parse(), (UDP_IP, port))
     data, addr = sock2.recvfrom(32678)
     p = Packet(parsed_bytes=bytearray(data))
+    print('received file with seqnum:',p.sequence_number)
+    j = 0
     while(p.data_type < 2):
         if (p.sum_checker() and p.sequence_number==i):
-            # print(i)
+            print(i + 256*j)
             # print(p.parse())
             f.write(bytes(p.data))
-            res = Packet(1,p.data_id)
+            res = Packet(1,p.data_id,sequence_number=i)
+            # print('sent file with seqnum:',res.sequence_number)
             sock2.sendto(res.parse(), (UDP_SEND_IP, port+1))
-            data, addr = sock2.recvfrom(32678)
-            p = Packet(parsed_bytes=bytearray(data))
-            i+=1
-            if (i==256):
-                i=0
+            try:
+                data, addr = sock2.recvfrom(32678)
+                p = Packet(parsed_bytes=bytearray(data))
+                # print('received file with seqnum:',p.sequence_number)
+                i+=1
+                if (i==256):
+                    i=0
+                    j+=1
+            except(Exception):
+                print('Not acknowledge, trying again...')
+        else:
+            print('seq_num mismatch',i,'and',p.sequence_number)
+            res = Packet(1,p.data_id,sequence_number=i)
+            # print('sent file with seqnum:',res.sequence_number)
+            sock2.sendto(res.parse(), (UDP_SEND_IP, port+1))
+            try:
+                data, addr = sock2.recvfrom(32678)
+                p = Packet(parsed_bytes=bytearray(data))
+                # print('received file with seqnum:',p.sequence_number)
+                i+=1
+                if (i==256):
+                    i=0
+                    j+=1
+            except(Exception):
+                print('Not acknowledge, trying again...')
     print('Upload file : ',file_request,' has finished')
     f.close()
     q.put(port)

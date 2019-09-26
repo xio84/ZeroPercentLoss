@@ -8,7 +8,7 @@ path = 'file_example/'
 
 SIZE_LIMIT = 32000
 UDP_IP = "127.0.0.1"
-UDP_SEND_PORT = 5005
+UDP_SEND_PORT = 4000
 AVAILABLE_FILES = []
 #Initiate available files
 # r=root, d=directories, f = files
@@ -156,12 +156,17 @@ if __name__=='__main__':
             sys.stdout.write(u"\u001b[2J")
             sys.stdout.flush()
             for file_progress in FILE_IN_PROGRESS:
+                background_index = FILE_IN_PROGRESS.index(file_progress) % 7 + 41
+                foreground_index = FILE_IN_PROGRESS.index(file_progress) % 7 + 41
                 print(file_progress[0], ':')
                 sys.stdout.write('[')
+                sys.stdout.write(u'\u001b[' + str(background_index) + u'm')
+                sys.stdout.write(u'\u001b[' + str(foreground_index) + u'm')
                 progress_i = 0
                 while(progress_i < file_progress[1]):
                     sys.stdout.write('x')
                     progress_i+=1
+                sys.stdout.write(u'\u001b[0m') 
                 while(progress_i < 10):
                     sys.stdout.write('-')
                     progress_i+=1

@@ -7,7 +7,7 @@ from packet import Packet
 
 SIZE_LIMIT = 32000 # In bytes
 TIMEOUT = 20 # In Seconds
-UDP_IP = "192.168.43.150"
+UDP_IP = "127.0.0.1"
 UDP_PORT = 5005
 
 path = 'downloads/'
@@ -31,34 +31,34 @@ def send_data(UDP_SEND_IP, port, q, file_request, data_id):
     j = 0
     while(p.data_type < 2):
         if (p.sum_checker() and p.sequence_number==i):
-            # print(i + 256*j)
+            print(i + 256*j)
             # print(p.parse())
             f.write(bytes(p.data))
             res = Packet(1,p.data_id,sequence_number=i)
-            # print('sent file with seqnum:',res.sequence_number)
+            print('sent file with seqnum:',res.sequence_number)
             sock2.sendto(res.parse(), (UDP_SEND_IP, port+1))
             try:
                 data, addr = sock2.recvfrom(32678)
                 p = Packet(parsed_bytes=bytearray(data))
-                # print('received file with seqnum:',p.sequence_number)
+                print('received file with seqnum:',p.sequence_number)
                 i+=1
                 if (i==256):
                     i=0
                     j+=1
             except(Exception):
-                # print('Not acknowledge, trying again...')
+                print('Not acknowledge, trying again...')
                 f.seek((i + 256*j)*SIZE_LIMIT,0)
         else:
-            # print('seq_num mismatch',i,'and',p.sequence_number)
+            print('seq_num mismatch',i,'and',p.sequence_number)
             res = Packet(1,p.data_id,sequence_number=i)
-            # print('sent file with seqnum:',res.sequence_number)
+            print('sent file with seqnum:',res.sequence_number)
             sock2.sendto(res.parse(), (UDP_SEND_IP, port+1))
             try:
                 data, addr = sock2.recvfrom(32678)
                 p = Packet(parsed_bytes=bytearray(data))
-                # print('received file with seqnum:',p.sequence_number)
+                print('received file with seqnum:',p.sequence_number)
             except(Exception):
-                # print('Not acknowledge, trying again...')
+                print('Not acknowledge, trying again...')
                 f.seek((i + 256*j)*SIZE_LIMIT,0)
     print('Upload file : ',file_request,' has finished')
     f.close()

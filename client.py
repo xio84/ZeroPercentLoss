@@ -109,7 +109,7 @@ if __name__=='__main__':
                     # file_writer(p, query)
                     print('Starting Upload:', query)
                     result = pool.apply_async(file_writer, (UDP_SEND_IP, p, query, data_id))
-                    result.get()
+                    # result.get()
                     # result.get()
             except(TimeoutError):
                 print('No, response. Try again')

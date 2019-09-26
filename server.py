@@ -94,7 +94,7 @@ if __name__ == '__main__':
         # receiver(data, addr)
         # receiver(data,addr,q,sock)
         results = pool.apply_async(receiver, (data, addr, q, sock))
-        results.get()
+        # results.get()
         # print(results.get(6))
     # results.close()
 

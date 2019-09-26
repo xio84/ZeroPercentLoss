@@ -44,11 +44,11 @@ def file_writer(UDP_SEND_IP, p, query, data_id):
             packet_data = bytearray(f.read(SIZE_LIMIT))
             p = Packet(parsed_data=packet_data, data_id=data_id, sequence_number=i)
             sock2.sendto(p.parse(), (UDP_SEND_IP, port))
-            print('sent file with seqnum:',p.sequence_number)
+            # print('sent file with seqnum:',p.sequence_number)
             try:
                 data, addr = sock2.recvfrom(1024)
                 res = Packet(parsed_bytes=bytearray(data)) # Read packet
-                print('received file with seqnum:',res.sequence_number, ', i= ',i)
+                # print('received file with seqnum:',res.sequence_number, ', i= ',i)
                 if ((i+(j*256))%ten_percent == 0):
                     print((i+(j*256)) // ten_percent * 10, '% done sending ', file_request)
                 if (res.data_type>1):
@@ -59,13 +59,13 @@ def file_writer(UDP_SEND_IP, p, query, data_id):
                         i=0
                         j+=1
                 elif (res.sequence_number!=i):
-                    print('Mismatched sequence number, readjusting...',i)
+                    # print('Mismatched sequence number, readjusting...',i)
                     i = res.sequence_number
                     f.seek((i + 256*j)*SIZE_LIMIT,0)
                 else:
                     f.seek((i + 256*j)*SIZE_LIMIT,0)
             except(Exception):
-                print('Not acknowledged, trying again...')
+                # print('Not acknowledged, trying again...')
                 f.seek((i + 256*j)*SIZE_LIMIT,0)
         
         # Finishing file transfer

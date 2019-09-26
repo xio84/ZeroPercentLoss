@@ -51,6 +51,8 @@ def file_writer(UDP_SEND_IP, p, query, data_id):
                 # print('received file with seqnum:',res.sequence_number)
                 if ((i+(j*256))%ten_percent == 0):
                     print((i+(j*256)) // ten_percent * 10, '% done sending ', file_request)
+                if (res.data_type>1):
+                    break
                 if (res.data_type==1 and res.sequence_number==i):
                     i += 1
                     if (i==256):
@@ -59,14 +61,12 @@ def file_writer(UDP_SEND_IP, p, query, data_id):
                 elif (res.sequence_number!=i):
                     print('Mismatched sequence number, readjusting...',i)
                     i = res.sequence_number
-                    f.seek(i,-SIZE_LIMIT)
+                    f.seek(0,(i + 256*j)*SIZE_LIMIT)
                 else:
-                    f.seek(1,-SIZE_LIMIT)
-                if (res.data_type>1):
-                    break
+                    f.seek(0,(i + 256*j)*SIZE_LIMIT)
             except(Exception):
                 print('Not acknowledged, trying again...')
-                f.seek(1,-SIZE_LIMIT)
+                f.seek(0,(i + 256*j)*SIZE_LIMIT)
         
         # Finishing file transfer
         p = Packet(2,data_id,i)

@@ -57,10 +57,6 @@ def send_data(UDP_SEND_IP, port, q, file_request, data_id):
                 data, addr = sock2.recvfrom(32678)
                 p = Packet(parsed_bytes=bytearray(data))
                 # print('received file with seqnum:',p.sequence_number)
-                i+=1
-                if (i==256):
-                    i=0
-                    j+=1
             except(Exception):
                 print('Not acknowledge, trying again...')
                 f.seek((i + 256*j)*SIZE_LIMIT,0)
